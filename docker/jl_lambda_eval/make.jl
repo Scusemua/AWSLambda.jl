@@ -1,25 +1,27 @@
 using AWSCore
 using AWSS3
-using AWSLambda
+include("../../src/AWSLambda.jl")
+using .AWSLambda
 
 JL_VERSION_BASE="0.6"
 JL_VERSION_PATCH="4"
 JL_VERSION="$JL_VERSION_BASE.$JL_VERSION_PATCH"
 
-image_name = "octech/$(replace(basename(pwd()), "_", "")):$JL_VERSION"
+image_name = "octech/$(replace(basename(pwd()), "_" => "")):$JL_VERSION"
 
 lambda_name = basename(pwd())
 
-source_bucket = "octech.com.au.ap-southeast-2.awslambda.jl.deploy"
+source_bucket = "bcarver.julia.development" #"octech.com.au.ap-southeast-2.awslambda.jl.deploy"
 
 base_zip = "$(lambda_name)_$(VERSION)_$(AWSLambda.aws_lamabda_jl_version).zip"
 
 if length(ARGS) == 0 || ARGS[1] == "build"
-    cp("../../src/AWSLambda.jl", "AWSLambda.jl"; remove_destination=true)
+    cp("../../src/AWSLambda.jl", "AWSLambda.jl")
     run(`docker build
             --build-arg JL_VERSION_BASE=$JL_VERSION_BASE
             --build-arg JL_VERSION_PATCH=$JL_VERSION_PATCH
              -t $image_name .`)
+    # docker build --build-arg JL_VERSION_BASE=0.6 --build-arg JL_VERSION_PATCH=4 -t octech/jllambdaeval:0.6.4 .
 end
 
 if length(ARGS) > 0 && ARGS[1] == "shell"

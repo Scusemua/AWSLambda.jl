@@ -35,7 +35,6 @@ module AWSLambda
 using AWSCore
 include("./AWSIAM.jl")
 using .AWSIAM
-using Serialization
 using JSON
 using InfoZIP
 using Retry
@@ -44,7 +43,6 @@ using DataStructures
 using Glob
 using FNVHash
 using Pkg
-using Base64
 using HTTP
 import HTTP: @require, precondition_error
 
@@ -63,9 +61,7 @@ function lambda(aws::AWSConfig, verb; path="", query=[], headers=Dict())
     aws = copy(aws)
     aws[:ordered_json_dict] = false
 
-    println("Path: " * string(path))
-
-    resource = HTTP.escapepath("/2015-03-31/functions/$path")
+    resource = HTTP.escapepath("/bcarver.julia.development/$path") #HTTP.escapepath("/2015-03-31/functions/$path")
 
     println("Querying for Lambda resource: " * string(resource))
 
@@ -625,7 +621,7 @@ end
 function serialize64(x)
 
     buf = IOBuffer()
-    b64 = Base64.Base64EncodePipe(buf)
+    b64 = Base64EncodePipe(buf)
     serialize(b64, x)
     close(b64)
     String(take!(buf))
@@ -659,7 +655,7 @@ invoke_jl_lambda(name::String, args...) =
 #      lambda_function(s -> JSON.parse(s))("{}")
 
 lambda_function(aws, f) =
-    (a...) -> invoke_jl_lambda(aws, "jl_lambda_eval", #:$jl_version",
+    (a...) -> invoke_jl_lambda(aws, "jl_lambda_eval:$jl_version",
                                     eval(Main,:(()->$f($a...))))
 
 lambda_function(f) = lambda_function(default_aws_config(), f)
@@ -743,8 +739,7 @@ end
 # Evaluate "expr" in the Lambda sandbox.
 
 lambda_eval(aws, expr) =
-    invoke_jl_lambda(aws, "jl_lambda_eval", expr)
-    #invoke_jl_lambda(aws, "jl_lambda_eval:$jl_version", expr)
+    invoke_jl_lambda(aws, "jl_lambda_eval:$jl_version", expr)
 
 lambda_eval(expr) = lambda_eval(default_aws_config(), expr)
 
